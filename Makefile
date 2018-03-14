@@ -26,8 +26,6 @@ lux32:
 
 	grub-mkrescue -o lux.iso iso
 
-	qemu-system-i386 -enable-kvm -vga std -smp 2 -cdrom lux.iso
-
 lux64:
 	rm -f *.o
 	iasl kernel/acpi.asl 
@@ -46,7 +44,9 @@ lux64:
 
 	fasm kernel/asm_x86_64/setup.asm iso/boot/kernel.sys
 	grub-mkrescue -o lux.iso iso
-	qemu-system-x86_64 -enable-kvm -vga std -smp 2 -cdrom lux.iso
+
+run:
+	qemu-system-x86_64 -cdrom lux.iso -m 128 -vga std
 
 clean:
 	rm -f iso/boot/*.*
