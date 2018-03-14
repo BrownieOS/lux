@@ -1,19 +1,24 @@
 
 DefinitionBlock("acpi.aml", "DSDT", 1, "TEST!", "", 1)
 {
-	Scope(_SB)
+	Name(KOT, 123456789)
+	Name(TOT, Package(4)
 	{
-		Device(HPET)
-		{
-			Name(_HID, EisaID("PNP0103"))
-			Name(_UID, Zero)
+		5,7,8,9
+	})
 
-			Name(_CRS, ResourceTemplate()
-			{
-				IRQNoFlags() { 4, 9 }
-				Memory32Fixed (ReadOnly, 0xFE48, 65)
-			})
-		}
+	Method(TEST, 0, NotSerialized)
+	{
+		TST1()
+		Return (7)
+	}
+
+	Method(TST1, 0, NotSerialized)
+	{
+		Local1 = 8
+		Local2 = 18
+		Local5 = Local2
+		Return(Local5)
 	}
 }
 

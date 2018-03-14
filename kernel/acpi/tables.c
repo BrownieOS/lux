@@ -68,7 +68,7 @@ void acpi_init()
 	}
 
 	acpi_load_fadt();
-	acpi_create_namespace();
+	acpi_create_namespace(acpi_dsdt);
 }
 
 // acpi_checksum(): Verifies checksum of a table
