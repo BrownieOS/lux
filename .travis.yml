@@ -1,7 +1,0 @@
-install:
-- sudo apt-get update
-- sudo apt-get install acpica-tools
-language: c
-compiler: clang
-script: make lux64
-
