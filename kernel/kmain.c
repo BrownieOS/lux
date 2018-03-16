@@ -59,6 +59,7 @@ void kmain(uint32_t multiboot_magic, multiboot_info_t *multiboot_info, vbe_mode_
 	acpi_init();
 	apic_init();
 	timer_init();
+	acpi_enable();
 	tasking_init();
 	vfs_init();
 	blkdev_init(multiboot_info);

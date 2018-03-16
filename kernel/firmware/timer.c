@@ -38,6 +38,19 @@ void timer_irq()
 	irq_eoi(timer_irq_line);
 }
 
+// timer_sleep(): Sleeps for milliseconds
+// Param:	uint64_t time - milliseconds to sleep
+// Return:	Nothing
+
+void timer_sleep(uint64_t time)
+{
+	uint64_t end_time = global_uptime + time;
+
+	while(end_time >= global_uptime)
+	{
+		asm volatile ("sti\nhlt");
+	}
+}
 
 
 

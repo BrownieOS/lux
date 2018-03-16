@@ -10,6 +10,7 @@
 #include <lock.h>
 #include <lai.h>
 
+void acpi_enable();
 
 
 

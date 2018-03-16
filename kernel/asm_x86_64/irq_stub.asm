@@ -86,6 +86,17 @@ timer_irq_stub:
 	irq_exit
 	iretq
 
+public acpi_irq_stub
+acpi_irq_stub:
+	irq_enter
+
+	extrn acpi_irq
+	call acpi_irq
+
+	irq_exit
+	iretq
+
+
 
 
 

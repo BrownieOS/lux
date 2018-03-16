@@ -17,6 +17,6 @@ uint8_t timer_irq_line;
 
 void timer_init();
 void pit_init();
-
+void timer_sleep(uint64_t);
 
 
