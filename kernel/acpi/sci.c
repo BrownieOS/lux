@@ -60,9 +60,9 @@ void acpi_enable()
 		{
 			kprintf("acpi: eval %s: 0x%xb\n", path, object.integer);
 
-			if(object.integer & ACPI_STA_PRESENT && object.integer & ACPI_STA_FUNCTION)
+			if(object.integer & ACPI_STA_PRESENT)
 			{
-				// invoke _INI for devices that are working properly
+				// invoke _INI for devices that are present
 				strcpy(state.name, device->path);
 				strcpy(state.name + strlen(state.name), "._INI");
 
