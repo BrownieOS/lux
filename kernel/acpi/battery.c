@@ -37,9 +37,9 @@ void battery_init()
 		batteries[battery_count] = kmalloc(sizeof(acpi_battery_t));
 
 		strcpy(batteries[battery_count]->path, handle->path);
-		battery_create(battery_count);
+		if(battery_create(battery_count) == 0)
+			battery_count++;
 
-		battery_count++;
 		if(battery_count >= MAX_BATTERIES)
 			break;
 
@@ -48,22 +48,14 @@ void battery_init()
 	}
 
 	if(battery_count != 0)
-	{
 		kprintf("acpi: %d batteries present.\n", battery_count);
-		kprintf("Press the power button to update battery percentage.\n");
-	}
-
-	while(1)
-	{
-		asm volatile ("sti\nhlt");
-	}
 }
 
 // battery_create(): Initializes a specific ACPI battery
 // Param:	size_t index - battery index
-// Return:	Nothing
+// Return:	int - 0 on success
 
-void battery_create(size_t index)
+int battery_create(size_t index)
 {
 	// verify the device's _STA
 	char path[512];
@@ -80,10 +72,10 @@ void battery_create(size_t index)
 		// if the device is not present, disabled, or non-functional --
 		// -- ignore this battery device
 		if(!object.integer & ACPI_STA_PRESENT || !object.integer & ACPI_STA_ENABLED || !object.integer & ACPI_STA_FUNCTION)
-			return;
+			return 1;
 	}
 
-	kprintf("acpi: battery device %s\n", batteries[index]->path);
+	kprintf("acpi: init battery %s\n", batteries[index]->path);
 
 	// ACPI gives us two functions to get static info: _BIF and _BIX
 	// We'll use _BIF only now, for simplicity's sake
@@ -94,8 +86,8 @@ void battery_create(size_t index)
 	if(eval_status != 0)
 	{
 		// TO-DO: Implement _BIX here
-		kprintf("acpi: battery device doesn't support _BIF, ignoring device\n");
-		return;
+		kprintf("acpi: battery device doesn't support _BIF, ignoring device.\n");
+		return 1;
 	}
 
 	acpi_object_t package_entry;
@@ -109,6 +101,9 @@ void battery_create(size_t index)
 
 	acpi_eval_package(&object, BIF_CHARGEABLE, &package_entry);
 	batteries[index]->chargeable = package_entry.integer;
+
+	acpi_eval_package(&object, BIF_VOLTAGE, &package_entry);
+	batteries[index]->voltage = package_entry.integer;
 
 	acpi_eval_package(&object, BIF_WARNING, &package_entry);
 	batteries[index]->warning = package_entry.integer;
@@ -128,12 +123,24 @@ void battery_create(size_t index)
 	acpi_eval_package(&object, BIF_OEM_SPECIFIC, &package_entry);
 	strcpy(batteries[index]->oem, package_entry.string);
 
+	// the only two defined power units for batteries
+	if(batteries[index]->power_unit != POWER_UNIT_MA && batteries[index]->power_unit != POWER_UNIT_MW)
+	{
+		kprintf("acpi: undefined power unit %d, ignoring battery.\n", batteries[index]->power_unit);
+		return 1;
+	}
+
 	kprintf("acpi: battery model %s, type %s, OEM-specific data %s\n", batteries[index]->model, batteries[index]->type, batteries[index]->oem);
 
-	if(batteries[index]->power_unit != POWER_UNIT_MA && batteries[index]->power_unit != POWER_UNIT_MW)
-		kprintf("acpi warning: undefined power unit %d, ignoring...\n", batteries[index]->power_unit);
+	kprintf("acpi: full charge capacity is %d ", batteries[index]->capacity);
 
-	//battery_update(index);
+	if(batteries[index]->power_unit == POWER_UNIT_MA)
+		kprintf("mAh");
+	else
+		kprintf("mWh");
+
+	kprintf(", voltage is %d mV\n", batteries[index]->voltage);
+	return battery_update(index);
 }
 
 // battery_update(): Updates a battery's dynamic status
@@ -142,11 +149,27 @@ void battery_create(size_t index)
 
 int battery_update(size_t index)
 {
-	// get battery status using _BST() package
+	// theoretically full charge level and measuring unit may change
+	// so read _BIF() again
 	char path[512];
 	int eval_status;
 	acpi_object_t object, package_entry;
 
+	strcpy(path, batteries[index]->path);
+	strcpy(path + strlen(path), "._BIF");
+
+	eval_status = acpi_eval(&object, path);
+	if(eval_status != 0)
+		return eval_status;
+
+	// get the full charge level and the power unit
+	acpi_eval_package(&object, BIF_POWER_UNIT, &package_entry);
+	batteries[index]->power_unit = package_entry.integer;
+
+	acpi_eval_package(&object, BIF_FULL_CAPACITY, &package_entry);
+	batteries[index]->capacity = package_entry.integer;
+
+	// get battery status using _BST() package
 	strcpy(path, batteries[index]->path);
 	strcpy(path + strlen(path), "._BST");
 
@@ -178,8 +201,13 @@ int battery_update(size_t index)
 	percentage = (int)percentage_dbl;
 
 	kprintf("%d% \n", percentage);
+
+	/*kprintf("acpi: max capacity is 0x%xd\n", batteries[index]->capacity);
+	kprintf("acpi: remaining capacity is 0x%xd\n", batteries[index]->remaining);*/
 	return 0;
 }
+
+\
 
 
 

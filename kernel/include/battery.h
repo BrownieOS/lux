@@ -15,7 +15,7 @@
 #define BIF_DESIGN_CAPACITY		1
 #define BIF_FULL_CAPACITY		2
 #define BIF_CHARGEABLE			3
-#define BIF_VOLATAGE			4
+#define BIF_VOLTAGE			4
 #define BIF_WARNING			5
 #define BIF_LOW				6
 #define BIF_MODEL			9
@@ -44,6 +44,7 @@ typedef struct acpi_battery_t
 	uint64_t power_unit;
 	uint64_t capacity;
 	uint64_t chargeable;
+	uint64_t voltage;
 	uint64_t warning;
 	uint64_t low;
 
@@ -60,8 +61,9 @@ extern acpi_battery_t *batteries[];
 size_t battery_count;
 
 void battery_init();
-void battery_create(size_t);
+int battery_create(size_t);
 int battery_update(size_t);
+
 
 
 

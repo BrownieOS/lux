@@ -61,11 +61,11 @@ void kmain(uint32_t multiboot_magic, multiboot_info_t *multiboot_info, vbe_mode_
 	apic_init();
 	timer_init();
 	acpi_enable();
-	battery_init();
 	tasking_init();
 	vfs_init();
 	blkdev_init(multiboot_info);
 	mount("/dev/initrd", "/", "ustar", 0, 0);
+	battery_init();
 	//devmgr_dump();
 
 	/*int file = open("/hello.txt", O_RDONLY);

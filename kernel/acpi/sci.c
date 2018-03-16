@@ -149,9 +149,6 @@ void acpi_irq()
 	outw(acpi_fadt->pm1a_event_block, event);
 	kprintf("acpi: SCI IRQ occured: event data 0x%xw\n");
 
-	if(battery_count != 0)
-		battery_update(0);
-
 	irq_eoi(acpi_sci);
 }
 

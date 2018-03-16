@@ -46,7 +46,9 @@ void timer_sleep(uint64_t time)
 {
 	uint64_t end_time = global_uptime + time;
 
-	while(end_time <= global_uptime)
+	//kprintf("gonna sleep for %d ms\n", time);
+
+	while(end_time > global_uptime)
 	{
 		asm volatile ("sti\nhlt");
 	}
