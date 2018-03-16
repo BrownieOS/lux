@@ -18,6 +18,7 @@
 #include <blkdev.h>
 #include <string.h>
 #include <rand.h>
+#include <battery.h>
 
 void *kend;
 
@@ -60,6 +61,7 @@ void kmain(uint32_t multiboot_magic, multiboot_info_t *multiboot_info, vbe_mode_
 	apic_init();
 	timer_init();
 	acpi_enable();
+	battery_init();
 	tasking_init();
 	vfs_init();
 	blkdev_init(multiboot_info);

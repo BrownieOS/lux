@@ -12,6 +12,7 @@
 #include <irq.h>
 #include <string.h>
 #include <timer.h>
+#include <battery.h>
 
 uint8_t acpi_sci;
 extern void acpi_irq_stub();
@@ -136,11 +137,6 @@ next:
 	iowait();
 
 	irq_unmask(acpi_sci);
-
-	while(1)
-	{
-		asm volatile ("sti\nhlt");
-	}
 }
 
 // acpi_irq(): ACPI SCI IRQ handler
@@ -152,6 +148,9 @@ void acpi_irq()
 	uint16_t event = inw(acpi_fadt->pm1a_event_block);
 	outw(acpi_fadt->pm1a_event_block, event);
 	kprintf("acpi: SCI IRQ occured: event data 0x%xw\n");
+
+	if(battery_count != 0)
+		battery_update(0);
 
 	irq_eoi(acpi_sci);
 }
