@@ -56,6 +56,18 @@ void acpi_enable()
 		strcpy(path + strlen(path), "._STA");
 
 		eval_status = acpi_eval(&object, path);
+
+		// ACPI spec says if _STA is not present, we assume all bits are set
+		// so run _INI
+		if(eval_status != 0)
+		{
+			strcpy(state.name, device->path);
+			strcpy(state.name + strlen(state.name), "._INI");
+
+			acpi_exec_method(&state, &object);
+			goto next;
+		}
+
 		if(eval_status == 0 && object.integer != 0)
 		{
 			kprintf("acpi: eval %s: 0x%xb\n", path, object.integer);
@@ -70,6 +82,7 @@ void acpi_enable()
 			}
 		}
 
+next:
 		device_index++;
 		device = acpins_get_device(device_index);
 	}
