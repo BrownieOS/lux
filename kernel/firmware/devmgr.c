@@ -26,6 +26,7 @@ char *device_types[] = {
 	"USB controller",		// 9
 	"USB",				// 10
 	"communications",		// 11
+	"ACPI",				// 12
 };
 
 // devmgr_init(): Initializes the device manager

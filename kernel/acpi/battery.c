@@ -8,9 +8,9 @@
 #include <mm.h>
 #include <battery.h>
 #include <string.h>
+#include <devmgr.h>
 
 /* ACPI Control Method Battery Driver */
-
 #define ACPI_BATTERY_ID			"PNP0C0A"
 
 acpi_battery_t *batteries[MAX_BATTERIES];
@@ -140,7 +140,17 @@ int battery_create(size_t index)
 		kprintf("mWh");
 
 	kprintf(", voltage is %d mV\n", batteries[index]->voltage);
-	return battery_update(index);
+	int status = battery_update(index);
+
+	if(status == 0)
+	{
+		device_t *device = kmalloc(sizeof(device_t));
+		device->category = DEVMGR_CATEGORY_ACPI;
+		devmgr_register(device, "Control method battery");
+		kfree(device);
+	}
+
+	return status;
 }
 
 // battery_update(): Updates a battery's dynamic status
@@ -207,7 +217,7 @@ int battery_update(size_t index)
 	return 0;
 }
 
-\
+
 
 
 

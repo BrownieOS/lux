@@ -12,7 +12,8 @@
 #include <devfs.h>
 #include <lock.h>
 #include <tty.h>
-#include <ustar.h>		// the only in-kernel FS
+#include <ustar.h>
+#include <ext2.h>
 
 file_handle_t *files;
 mountpoint_t *mountpoints;
@@ -400,6 +401,8 @@ int stat(const char *path, struct stat *destination)
 
 	if(strcmp(mountpoints[mountpoint].fstype, "ustar") == 0)
 		status = ustar_stat(&mountpoints[mountpoint], tmp_path, destination);
+	else if(strcmp(mountpoints[mountpoint].fstype, "ext2") == 0)
+		status = ext2_stat(&mountpoints[mountpoint], tmp_path, destination);
 	else
 	{
 		kprintf("vfs: undefined filesystem type: %s\n", mountpoints[mountpoint].fstype);
@@ -407,9 +410,6 @@ int stat(const char *path, struct stat *destination)
 	}
 
 	kfree(tmp_path);
-
-	// TO-DO: Non-kernel filesystems will be added here
-	// ext2 and FAT32 are intended for the foreseeable future
 	return status;
 }
 

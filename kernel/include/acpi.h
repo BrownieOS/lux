@@ -11,6 +11,10 @@
 #include <lai.h>
 
 void acpi_enable();
+void acpi_init();
+int acpi_checksum(void *);
+void acpi_load_fadt();
+
 
 
 

@@ -21,6 +21,7 @@ lock_t com1_mutex = 0;
 void com1_wait();
 void com1_send_byte(char);
 void com1_send(char *);
+extern uint8_t kernel_debug;
 
 // kprint_init(): Initializes the kernel debug messages
 // Param:	Nothing
@@ -30,13 +31,16 @@ void kprint_init()
 {
 	debug_mode = 0;
 
-	// read the serial port base
-	/*uint16_t *ptr = (uint16_t*)0x400;
-	com1_base = ptr[0];*/
-	com1_base = 0;
-
-	if(com1_base == 0)
-		return;			// no serial port
+	// configure the serial port if the kernel params say so
+	if(kernel_debug == 2)
+	{
+		uint16_t *ptr = (uint16_t*)0x400;
+		com1_base = ptr[0];
+	} else
+	{
+		com1_base = 0;
+		return;
+	}
 
 	outb(com1_base+1, 1);		// interrupt with data
 	iowait();

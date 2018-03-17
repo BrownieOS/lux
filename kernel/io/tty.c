@@ -30,6 +30,8 @@ uint32_t colors[] = {
 	BRIGHT_BLUE, BRIGHT_MAGENTA, BRIGHT_CYAN, WHITE,
 };
 
+extern uint8_t kernel_debug;
+
 // screen_init(): Initializes the screen
 // Param:	vbe_mode_t *vbe_mode - VESA mode information
 // Return:	Nothing
@@ -89,7 +91,11 @@ void screen_init(vbe_mode_t *vbe_info)
 
 	debug_mode = 1;
 	screen_unlock();
-	tty_switch(0);
+
+	if(kernel_debug == 1)
+		tty_switch(0);
+	else
+		tty_switch(1);
 
 	device_t *device = kmalloc(sizeof(device_t));
 	device->category = DEVMGR_CATEGORY_GRAPHICS;

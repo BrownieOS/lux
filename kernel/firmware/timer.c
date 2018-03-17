@@ -8,6 +8,7 @@
 #include <kprintf.h>
 #include <cpu.h>
 #include <irq.h>
+#include <battery.h>
 #include <lock.h>
 
 uint64_t global_uptime = 0;

@@ -22,8 +22,28 @@
 
 void *kend;
 
+uint8_t kernel_debug = 0;
+
 void kmain(uint32_t multiboot_magic, multiboot_info_t *multiboot_info, vbe_mode_t *vbe_mode)
 {
+	// initialize kernel debugging
+	char *command_line = (char*)((size_t)multiboot_info->cmdline);
+	size_t i = 0;
+	while(i < strlen(command_line))
+	{
+		if(memcmp(command_line + i, "debug=tty", 9) == 0)
+			kernel_debug = 1;		// tty
+		else if(memcmp(command_line + i, "debug=com1", 10) == 0)
+			kernel_debug = 2;		// com1
+		else
+		{
+			i++;
+			continue;
+		}
+
+		break;
+	}
+
 	kprint_init();
 
 	if(multiboot_magic != MULTIBOOT_MAGIC)
@@ -64,7 +84,7 @@ void kmain(uint32_t multiboot_magic, multiboot_info_t *multiboot_info, vbe_mode_
 	tasking_init();
 	vfs_init();
 	blkdev_init(multiboot_info);
-	mount("/dev/initrd", "/", "ustar", 0, 0);
+	mount("/dev/initrd", "/", "ext2", 0, 0);
 	battery_init();
 	//devmgr_dump();
 
@@ -72,8 +92,8 @@ void kmain(uint32_t multiboot_magic, multiboot_info_t *multiboot_info, vbe_mode_
 	kprintf("opened file hello.txt, file handle %d\n", file);*/
 
 	struct stat stat_info;
-	int status = stat("/hello.txt", &stat_info);
-	kprintf("stat '/hello.txt' returned status code: %d\n", status);
+	int status = stat("/test/hello.txt", &stat_info);
+	kprintf("stat '/test/hello.txt' returned status code: %d\n", status);
 
 	kprintf("  file mode: 0x%xd (", stat_info.st_mode);
 	if(stat_info.st_mode & S_IFBLK)
