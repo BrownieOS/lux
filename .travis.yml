@@ -3,7 +3,7 @@ install:
 - sudo apt-get install acpica-tools
 - wget http://flatassembler.net/fasm-1.72.tgz
 - gunzip -c fasm-1.72.tgz | tar xopf -
-- cd fasm; export PATH="$PATH;$PWD"; chmod a+x fasm; cd ..
+- cd fasm; chmod a+x fasm; sudo cp fasm /bin; cd ..
 language: c
 compiler: clang
 script: sudo make lux64
