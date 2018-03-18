@@ -4,6 +4,7 @@
 	CFILES=kernel/*.c kernel/*/*.c
 	LAIFILES=lai/src/*.c lai/src/lux/*.c
 	OBJECTS=*.o
+	DATE=`date +"%d%m%Y-%H%M%S"`
 
 lux32:
 	rm -f *.o
@@ -34,6 +35,7 @@ lux32:
 	rm -Rf mnt
 
 	grub-mkrescue -o lux.iso iso
+	cp lux.iso lux-$(DATE).iso
 
 lux64:
 	rm -f *.o
@@ -62,6 +64,7 @@ lux64:
 
 	fasm kernel/asm_x86_64/setup.asm iso/boot/kernel.sys
 	grub-mkrescue -o lux.iso iso
+	cp lux.iso lux-$(DATE).iso
 
 run:
 	qemu-system-x86_64 -cdrom lux.iso -enable-kvm -m 128 -vga std
