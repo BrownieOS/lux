@@ -7,6 +7,7 @@
 	DATE=`date +"%d%m%Y-%H%M%S"`
 
 lux32:
+	rm -f *.iso
 	rm -f *.o
 	$(CC) $(CFLAGS) -target i386-pc-none -Ikernel/include -c runtime/*.c
 	ar r runtime.a *.o
@@ -34,9 +35,11 @@ lux32:
 	sudo losetup -d /dev/loop0
 	rm -Rf mnt
 
-	grub-mkrescue -o lux-$(DATE).iso iso
+	grub-mkrescue -o lux.iso iso
+	qemu-system-i386 -cdrom lux.iso -enable-kvm -m 128 -vga std
 
 lux64:
+	rm -f *.iso
 	rm -f *.o
 	iasl kernel/acpi.asl 
 	fasm kernel/asm_i386/vbe.asm vbe.sys
@@ -62,9 +65,7 @@ lux64:
 	rm -Rf mnt
 
 	fasm kernel/asm_x86_64/setup.asm iso/boot/kernel.sys
-	grub-mkrescue -o lux-$(DATE).iso iso
-
-run:
+	grub-mkrescue -o lux.iso iso
 	qemu-system-x86_64 -cdrom lux.iso -enable-kvm -m 128 -vga std
 
 clean:
