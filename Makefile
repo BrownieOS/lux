@@ -34,8 +34,7 @@ lux32:
 	sudo losetup -d /dev/loop0
 	rm -Rf mnt
 
-	grub-mkrescue -o lux.iso iso
-	cp lux.iso lux-$(DATE).iso
+	grub-mkrescue -o lux-$(DATE).iso iso
 
 lux64:
 	rm -f *.o
@@ -63,8 +62,7 @@ lux64:
 	rm -Rf mnt
 
 	fasm kernel/asm_x86_64/setup.asm iso/boot/kernel.sys
-	grub-mkrescue -o lux.iso iso
-	cp lux.iso lux-$(DATE).iso
+	grub-mkrescue -o lux-$(DATE).iso iso
 
 run:
 	qemu-system-x86_64 -cdrom lux.iso -enable-kvm -m 128 -vga std
