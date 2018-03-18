@@ -25,12 +25,12 @@ lux32:
 	#cd initrd; tar --owner=root --group=root -cf ../iso/boot/initrd.img *; cd ..
 	if [ ! -d "mnt" ]; then mkdir mnt; fi
 	dd if=/dev/zero conv=notrunc bs=512 count=10240 of=iso/boot/initrd.img
-	losetup /dev/loop0 iso/boot/initrd.img
-	mke2fs /dev/loop0
-	mount /dev/loop0 mnt
-	cp -R initrd/* mnt
-	umount -l /dev/loop0
-	losetup -d /dev/loop0
+	sudo losetup /dev/loop0 iso/boot/initrd.img
+	sudo mke2fs /dev/loop0
+	sudo mount /dev/loop0 mnt
+	sudo cp -R initrd/* mnt
+	sudo umount -l /dev/loop0
+	sudo losetup -d /dev/loop0
 	rm -Rf mnt
 
 	grub-mkrescue -o lux.iso iso
@@ -53,12 +53,12 @@ lux64:
 	#cd initrd; tar --owner=root --group=root -cf ../iso/boot/initrd.img *; cd ..
 	if [ ! -d "mnt" ]; then mkdir mnt; fi
 	dd if=/dev/zero conv=notrunc bs=512 count=10240 of=iso/boot/initrd.img
-	losetup /dev/loop0 iso/boot/initrd.img
-	mke2fs /dev/loop0
-	mount /dev/loop0 mnt
-	cp -R initrd/* mnt/
-	umount -l /dev/loop0
-	losetup -d /dev/loop0
+	sudo losetup /dev/loop0 iso/boot/initrd.img
+	sudo mke2fs /dev/loop0
+	sudo mount /dev/loop0 mnt
+	sudo cp -R initrd/* mnt
+	sudo umount -l /dev/loop0
+	sudo losetup -d /dev/loop0
 	rm -Rf mnt
 
 	fasm kernel/asm_x86_64/setup.asm iso/boot/kernel.sys

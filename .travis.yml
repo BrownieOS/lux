@@ -6,6 +6,6 @@ install:
 - cd fasm; chmod a+x fasm; sudo cp fasm /bin; cd ..
 language: c
 compiler: clang
-script: sudo make lux64
+script: make lux64
 
 
