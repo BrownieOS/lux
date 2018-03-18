@@ -1,6 +1,6 @@
 install:
 - sudo apt-get update
-- sudo apt-get install acpica-tools
+- sudo apt-get install acpica-tools fasm
 language: c
 compiler: clang
 script: sudo make lux64
