@@ -6,10 +6,10 @@
 
 #include <timer.h>
 #include <kprintf.h>
-#include <cpu.h>
 #include <irq.h>
 #include <battery.h>
-#include <lock.h>
+#include <cpu.h>
+#include <hpet.h>
 
 uint64_t global_uptime = 0;
 uint8_t timer_irq_line;
@@ -20,8 +20,8 @@ uint8_t timer_irq_line;
 
 void timer_init()
 {
-	pit_init();
-	//hpet_init();
+	if(hpet_init() != 0)
+		pit_init();
 }
 
 // timer_irq(): Generic timer IRQ handler
