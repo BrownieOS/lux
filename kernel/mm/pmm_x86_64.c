@@ -35,13 +35,12 @@ void pmm_init(multiboot_info_t *multiboot_info)
 	}
 
 	// we have to have at least 64 MB contiguous
-	/*if(multiboot_info->mem_upper < 65536)
+	if(multiboot_info->mem_upper < 65536)
 	{
 		kprintf("boot error: too little memory present.\n");
 		while(1);
-	}*/
+	}
 
-	// create a bitmap at 32 MB
 	pmm_bitmap = (uint8_t*)kend;
 	memset(pmm_bitmap, 0, PMM_BITMAP_SIZE);
 
@@ -107,8 +106,8 @@ void pmm_init(multiboot_info_t *multiboot_info)
 
 	kprintf("pmm: total of %d MB memory, of which %d MB are usable.\n", (uint32_t)(total_memory/ 1024/1024), (uint32_t)(usable_memory/1024/1024));
 
-	// mark the lowest 48 MB for the kernel
-	pmm_mark_used(0, 12288);
+	// mark the lowest 32 MB for the kernel
+	pmm_mark_used(0, 8192);
 	kprintf("pmm: %d pages, %d used, %d hardware reserved.\n", total_pages, used_pages, reserved_pages);
 }
 
@@ -239,9 +238,9 @@ size_t pmm_find_range(size_t count)
 	if(!count)
 		return NULL;
 
-	// we have reserved the lowest 48 MB for the kernel
-	// so start looking from 48 MB
-	size_t current_return = 0x3000000;
+	// we have reserved the lowest 32 MB for the kernel
+	// so start looking from 32 MB
+	size_t current_return = 0x2000000;
 	size_t free_count = 0;
 
 	while(free_count < count)
