@@ -49,12 +49,11 @@ void *krealloc(void *ptr, size_t size)
 	void *newptr = kmalloc(size);
 
 	size_t *header = (size_t*)((size_t)ptr - HEAP_ALIGNMENT);
-	if(size < header[1])			// resize is shrinking the memory?
-		memcpy(newptr, ptr, size);
-	else
-		memcpy(newptr, ptr, header[1]);
+	size_t old_size = header[1];
 
-	//kfree(ptr);
+	memcpy(newptr, ptr, old_size);
+
+	kfree(ptr);
 	return newptr;
 }
 
