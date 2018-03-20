@@ -88,6 +88,7 @@ use16
 
 	mov eax, cr0
 	or eax, 0x80000001
+	or eax, 0x10000
 	and eax, not 0x60000000
 	mov cr0, eax
 	jmp 0x08:0x1100

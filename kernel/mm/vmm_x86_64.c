@@ -22,10 +22,14 @@ void vmm_map_page(size_t, size_t, uint8_t);
 
 void vmm_init()
 {
-	// there's really nothing to do here --
+	// there's really not much to do here --
 	// -- because paging is always enabled in x86_64
 
 	pml4 = (size_t*)(read_cr3() & (~(PAGE_SIZE-1)));
+	uint64_t cr0 = read_cr0();
+	cr0 |= 0x10000;		// WP
+	cr0 &= ~0x60000000;	// caching
+	write_cr0(cr0);
 }
 
 // vmm_get_page(): Returns physical address and flags of a page

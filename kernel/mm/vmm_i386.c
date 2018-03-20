@@ -55,9 +55,11 @@ void vmm_init()
 	}
 
 	// enable paging
+	write_cr4(read_cr4() & ~0x20);
 	write_cr3((uint32_t)page_directory);
 	uint32_t cr0 = read_cr0();
-	cr0 |= 0x80000000;
+	cr0 |= 0x80000000;		// paging
+	cr0 |= 0x10000;			// WP
 	cr0 &= ~0x60000000;		// caching
 	write_cr0(cr0);
 }

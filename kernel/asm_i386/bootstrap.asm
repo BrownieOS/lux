@@ -187,6 +187,7 @@ use32
 
 	mov eax, cr0
 	or eax, 0x80000000
+	or eax, 0x10000
 	and eax, not 0x60000000
 	mov cr0, eax
 
