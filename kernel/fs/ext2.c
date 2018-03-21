@@ -15,8 +15,10 @@
 int ext2_read_superblock(mountpoint_t *, ext2_superblock_t *);
 int ext2_get_inode(mountpoint_t *, const char *, uint32_t *);
 int ext2_read_block(mountpoint_t *, ext2_superblock_t *, uint32_t, uint32_t, void *);
-int ext2_read_metadata(mountpoint_t *, ext2_superblock_t *, uint32_t, void *);
+int ext2_read_metadata(mountpoint_t *, ext2_superblock_t *, uint32_t, ext2_inode_t *);
 int ext2_read_inode(mountpoint_t *, ext2_superblock_t *, ext2_inode_t *, void *);
+int ext2_read_singly(mountpoint_t *, ext2_superblock_t *, uint32_t, void *, size_t *);
+int ext2_read_doubly(mountpoint_t *, ext2_superblock_t *, uint32_t, void *, size_t *);
 
 // ext2_stat(): Returns stat() information for a file on an ext2 volume
 // Param:	mountpoint_t *mountpoint - pointer to mountpoint structure
@@ -133,6 +135,82 @@ int ext2_stat(mountpoint_t *mountpoint, const char *path, struct stat *destinati
 	return 0;
 }
 
+// ext2_read(): Reads a file from an ext2 volume
+// Param:	mountpoint_t *mountpoint - pointer to mountpoint structure
+// Param:	file_handle_t *file - file handle structure
+// Param:	void *buffer - buffer to read into
+// Param:	size_t count - bytes to read
+// Return:	ssize_t - total count of bytes read, or error code
+
+ssize_t ext2_read(mountpoint_t *mountpoint, file_handle_t *file, void *buffer, size_t count)
+{
+	if(file->present != 1 || !file->flags & O_RDONLY)
+		return EBADF;
+
+	ext2_superblock_t *superblock = kmalloc(1024);
+	int status = ext2_read_superblock(mountpoint, superblock);
+	if(status != 0)
+		return status;
+
+	// get the file's inode number
+	uint32_t inode_index;
+	status = ext2_get_inode(mountpoint, file->path, &inode_index);
+	if(status != 0)
+	{
+		kfree(superblock);
+		return status;
+	}
+
+	// read the metadata
+	uint32_t inode_size = 128;
+	if(superblock->version_high >= 1)
+		inode_size = (uint32_t)superblock->inode_struct_size;
+
+	// allocate space for the inode metadata
+	ext2_inode_t *metadata = kmalloc(inode_size);
+	status = ext2_read_metadata(mountpoint, superblock, inode_index, metadata);
+	if(status != 0)
+	{
+		kfree(superblock);
+		kfree(metadata);
+		return status;
+	}
+
+	// determine how much is readable
+	if(file->position >= metadata->size_low)
+	{
+		kfree(superblock);
+		kfree(metadata);
+		return EIO;
+	}
+
+	if(file->position + count >= metadata->size_low)
+		count = metadata->size_low - file->position;
+
+	// the following lines are dirty af and should be replaced with proper
+	// code ASAP.
+
+	// read the file
+	void *tmp_buffer = kmalloc(metadata->size_low + (1024 << superblock->block_size));
+	status = ext2_read_inode(mountpoint, superblock, metadata, tmp_buffer);
+	if(status != 0)
+	{
+		kfree(superblock);
+		kfree(metadata);
+		kfree(tmp_buffer);
+		return EIO;
+	}
+
+	// copy the data needed to be read
+	memcpy(buffer, tmp_buffer + file->position, count);
+	file->position += count;
+
+	kfree(superblock);
+	kfree(metadata);
+	kfree(tmp_buffer);
+	return count;
+}
+
 /* Internal Functions */
 
 // ext2_read_superblock(): Returns the superblock & block group descriptor table
@@ -165,6 +243,7 @@ int ext2_read_superblock(mountpoint_t *mountpoint, ext2_superblock_t *destinatio
 		return EIO;
 	}
 
+	close(handle);
 	return 0;
 }
 
@@ -348,10 +427,10 @@ int ext2_read_block(mountpoint_t *mountpoint, ext2_superblock_t *superblock, uin
 // Param:	mountpoint_t *mountpoint - mountpoint
 // Param:	ext2_superblock_t *superblock - superblock
 // Param:	uint32_t inode - inode number
-// Param:	void *destination - destination buffer
+// Param:	ext2_inode_t *destination - destination buffer
 // Return:	int - status
 
-int ext2_read_metadata(mountpoint_t *mountpoint, ext2_superblock_t *superblock, uint32_t inode, void *destination)
+int ext2_read_metadata(mountpoint_t *mountpoint, ext2_superblock_t *superblock, uint32_t inode, ext2_inode_t *destination)
 {
 	inode--;		// because inode numbering starts at one
 	uint32_t block_group = inode / superblock->inodes_per_group;
@@ -430,14 +509,118 @@ int ext2_read_inode(mountpoint_t *mountpoint, ext2_superblock_t *superblock, ext
 		direct_count++;
 	}
 
-	if(direct_count >= 12)
+	size_t indirect_size;
+
+	if(inode->singly_block != 0)
 	{
-		kprintf("ext2: TO-DO: Implement Singly, Doubly, and Triply blocks here\n");
+		status = ext2_read_singly(mountpoint, superblock, inode->singly_block, destination, &indirect_size);
+		if(status != 0)
+			return status;
+
+		destination += indirect_size;
+	}
+
+	if(inode->doubly_block != 0)
+	{
+		status = ext2_read_doubly(mountpoint, superblock, inode->doubly_block, destination, &indirect_size);
+		if(status != 0)
+			return status;
+
+		destination += indirect_size;
+	}
+
+	if(inode->triply_block != 0)
+	{
+		kprintf("ext2: TO-DO: Implement triply blocks here.\n");
 		while(1);
 	}
 
 	return 0;
 }
+
+// ext2_read_singly(): Reads a singly indirect block
+// Param:	mountpoint_t *mountpoint - mountpoint structure
+// Param:	ext2_superblock_t *superblock - superblock
+// Param:	uint32_t block - block number
+// Param:	void *destination - destination to read into
+// Param:	size_t *size - destination to store byte count
+// Return:	int - status code
+
+int ext2_read_singly(mountpoint_t *mountpoint, ext2_superblock_t *superblock, uint32_t block, void *destination, size_t *size)
+{
+	size[0] = 0;
+
+	size_t count;
+	uint32_t block_size = 1024 << superblock->block_size;
+
+	count = block_size / sizeof(uint32_t);		// number of block pointers
+
+	// read the singly block
+	uint32_t *singly_block = kmalloc(block_size);
+	int status;
+	status = ext2_read_block(mountpoint, superblock, block, 1, singly_block);
+	if(status != 0)
+		return status;
+
+	// and read the blocks pointed to by them
+	size_t i = 0;
+	while(i < count && singly_block[i] != 0)
+	{
+		status = ext2_read_block(mountpoint, superblock, singly_block[i], 1, destination);
+		if(status != 0)
+			return status;
+
+		destination += block_size;
+		size[0] += block_size;
+		i++;
+	}
+
+	kfree(singly_block);
+	return 0;
+}
+
+// ext2_read_doubly(): Reads a doubly indirect block
+// Param:	mountpoint_t *mountpoint - mountpoint structure
+// Param:	ext2_superblock_t *superblock - superblock
+// Param:	uint32_t block - block number
+// Param:	void *destination - destination to read into
+// Param:	size_t *size - destination to store byte count
+// Return:	int - status code
+
+int ext2_read_doubly(mountpoint_t *mountpoint, ext2_superblock_t *superblock, uint32_t block, void *destination, size_t *size)
+{
+	size[0] = 0;
+
+	size_t count;
+	uint32_t block_size = 1024 << superblock->block_size;
+
+	count = block_size / sizeof(uint32_t);		// number of block pointers
+
+	// read the doubly block
+	uint32_t *doubly_block = kmalloc(block_size);
+	int status;
+	status = ext2_read_block(mountpoint, superblock, block, 1, doubly_block);
+	if(status != 0)
+		return status;
+
+	// and read the blocks pointed to by them
+	size_t i = 0;
+	size_t entry_size;
+	while(i < count && doubly_block[i] != 0)
+	{
+		status = ext2_read_singly(mountpoint, superblock, doubly_block[i], destination, &entry_size);
+		if(status != 0)
+			return status;
+
+		destination += entry_size;
+		size[0] += entry_size;
+		i++;
+	}
+
+	kfree(doubly_block);
+	return 0;
+}
+
 
 
 

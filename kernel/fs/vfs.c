@@ -133,14 +133,11 @@ int open(const char *path, int flags, ...)
 	if(status != 0)
 		return status;
 
-	acquire_lock(&vfs_mutex);
+	// make sure it's not a directory
+	if(file_info.st_mode & S_IFDIR)
+		return EBADF;
 
-	if(!file_info.st_mode & S_IFBLK || !file_info.st_mode & S_IFCHR || !file_info.st_mode & S_IFIFO || !file_info.st_mode & S_IFREG)
-	{
-		kprintf("vfs: can't open %s; it's not a file.\n");
-		release_lock(&vfs_mutex);
-		return ENOENT;
-	}
+	acquire_lock(&vfs_mutex);
 
 	// resolve the path
 	vfs_resolve_path(full_path, path);
@@ -229,9 +226,29 @@ ssize_t read(int handle, char *buffer, size_t count)
 	if(memcmp(files[handle].path, "/dev/", 5) == 0)
 		return devfs_read(handle, buffer, count);
 
-	// for now
+	// determine the actual mountpoint
+	int mountpoint = vfs_determine_mountpoint(full_path);
+	if(mountpoint < 0)
+	{
+		release_lock(&vfs_mutex);
+		return ENOENT;
+	}
+
+	char *tmp_path = kmalloc(1024);
+	strcpy(tmp_path, full_path);
 	release_lock(&vfs_mutex);
-	return 0;
+
+	ssize_t status;
+
+	if(strcmp(mountpoints[mountpoint].fstype, "ext2") == 0)
+		status = ext2_read(&mountpoints[mountpoint], &files[handle], buffer, count);
+	else
+	{
+		kprintf("vfs: undefined filesystem type: %s\n", mountpoints[mountpoint].fstype);
+		status = ENOENT;
+	}
+
+	return status;
 }
 
 // write(): Writes a file

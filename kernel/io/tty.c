@@ -490,8 +490,8 @@ void tty_put(char character, size_t tty)
 		return;
 	}
 
-	if(!character)
-		return;
+	/*if(!character)
+		return;*/
 
 	acquire_lock(&tty_mutex);
 

@@ -131,7 +131,7 @@ typedef struct ext2_directory_t
 }__attribute__((packed)) ext2_directory_t;
 
 int ext2_stat(mountpoint_t *, const char *, struct stat *);
-
+ssize_t ext2_read(mountpoint_t *, file_handle_t *, void *, size_t);
 
 
 
